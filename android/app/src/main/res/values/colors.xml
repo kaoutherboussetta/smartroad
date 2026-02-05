@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Couleurs principales -->
+    <color name="colorPrimary">#2196F3</color>
+    <color name="colorPrimaryDark">#1976D2</color>
+    <color name="colorAccent">#FF4081</color>
+    
+    <!-- Couleurs supplémentaires -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="background">#F5F5F5</color>
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#757575</color>
+    
+    <!-- Couleurs spécifiques à SmartRoad -->
+    <color name="smartroad_blue">#1E88E5</color>
+    <color name="smartroad_dark">#0D47A1</color>
+    <color name="smartroad_accent">#00ACC1</color>
+</resources>
