@@ -5,38 +5,47 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ">=3.10.7 <4.0.0"
+  sdk: ">=3.1.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  
+
+  # Icons
+  cupertino_icons: ^1.0.8
+
+  # Video player
+  video_player: ^2.8.3
+
   # Permissions
   permission_handler: ^11.0.0
-  
+
+  # Base de données et utilitaires
+  path: ^1.8.3
+  crypto: ^3.0.3
+  bcrypt: ^1.2.0   # Mot de passe (aligné Atlas users)
+  mongo_dart: ^0.10.3   # MongoDB Atlas
+
+  # State management
+  provider: ^6.1.2
+
+  # Local storage
+  shared_preferences: ^2.2.2
+
   # Localisation
   geolocator: ^10.0.0
   location: ^5.0.0
-  
+
   # Google Maps
   google_maps_flutter: ^2.5.0
-  
+
   # API calls
   http: ^1.1.0
   dio: ^5.3.0
-  
-  # Video player
-  video_player: ^2.8.2
-  
-  # Icons
-  cupertino_icons: ^1.0.8
-  
+
   # Animation et UI
   lottie: ^3.0.1
-  
-  # State management (optionnel)
-  provider: ^6.1.2
-  
+
   # Navigation
   go_router: ^14.0.1
 
@@ -44,12 +53,12 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-  
 
 flutter:
   uses-material-design: true
 
   assets:
-    - assets/videos/intro.mp4
+    - assets/videos/
     - assets/images/
+    - assets/images/logo_treg_eslama.png
     - assets/animations/

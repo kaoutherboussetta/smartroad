@@ -1,535 +1,418 @@
-import 'dart:math';
-import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../widgets/video_background.dart';
 
-class OnboardingAnalysisPage extends StatefulWidget {
+const String _kLocationPermissionAskedKey = 'location_permission_asked_once';
+
+class CompleteOnboardingPage extends StatefulWidget {
   @override
-  State<OnboardingAnalysisPage> createState() => _OnboardingAnalysisPageState();
+  State<CompleteOnboardingPage> createState() => _CompleteOnboardingPageState();
 }
 
-class _OnboardingAnalysisPageState extends State<OnboardingAnalysisPage>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _slideAnimation;
-  late Animation<double> _scaleAnimation;
+class _CompleteOnboardingPageState extends State<CompleteOnboardingPage> {
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+  static const int _totalPages = 4;
 
-  int _currentStep = 0;
-  bool _showParticles = false;
-  bool _showLocationModal = false;
-  bool _hasShownPermissionAlert = false;
-
-  final List<Map<String, dynamic>> _features = [
-    {
-      'icon': Icons.analytics_outlined,
-      'title': 'Analyse IA avancée',
-      'description':
-          'Notre intelligence artificielle scanne les images satellites en temps réel pour détecter les anomalies routières.',
-      'color': Colors.blueAccent,
-    },
-    {
-      'icon': Icons.satellite_alt_outlined,
-      'title': 'Données Google Earth',
-      'description':
-          'Accès aux dernières images satellites haute définition pour une analyse précise du terrain.',
-      'color': Colors.greenAccent,
-    },
-    {
-      'icon': Icons.cloud_outlined,
-      'title': 'Météo en temps réel',
-      'description':
-          'Intégration des données météorologiques pour anticiper les conditions routières dangereuses.',
-      'color': Colors.cyanAccent,
-    },
-    {
-      'icon': Icons.warning_amber_outlined,
-      'title': 'Détection proactive',
-      'description':
-          'Alertes automatiques sur les risques potentiels avant même votre départ.',
-      'color': Colors.orangeAccent,
-    },
-  ];
+  // Couleurs
+  static const Color _primaryColor = Color(0xFF0088CC);
+  static const Color _secondaryColor = Color(0xFF25D366);
+  static const Color _accentColor = Color(0xFFFF9500);
+  static const Color _textSecondary = Color(0xFFAEAEB2);
+  static const Color _bgColor = Color(0xFF000000);
 
   @override
   void initState() {
     super.initState();
-
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    );
-
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-
-    _slideAnimation = Tween<double>(
-      begin: 50.0,
-      end: 0.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
-
-    _scaleAnimation = Tween<double>(
-      begin: 0.8,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.elasticOut));
-
-    _controller.forward();
-
-    // Démarrer l'animation des particules après un délai
-    Timer(const Duration(milliseconds: 500), () {
-      if (mounted) {
-        setState(() {
-          _showParticles = true;
-        });
-      }
-    });
-
-    // Vérifier et demander la permission de localisation après un délai
-    Timer(const Duration(seconds: 1), () {
-      if (mounted) {
-        _checkAndRequestLocationPermission();
-      }
-    });
+    VideoBackground.preload();
   }
 
-  Future<void> _checkAndRequestLocationPermission() async {
-    // Vérifier si l'alerte a déjà été montrée
-    if (_hasShownPermissionAlert) {
-      return;
-    }
-
-    // Vérifier l'état de la permission
-    final permissionStatus = await Permission.location.status;
-
-    // Si la permission n'est pas accordée, afficher l'alerte
-    if (!permissionStatus.isGranted) {
-      _showLocationPermissionModal();
-      _hasShownPermissionAlert = true;
-    }
-  }
-
-  void _showLocationPermissionModal() {
-    setState(() {
-      _showLocationModal = true;
-    });
-  }
-
-  void _closeLocationModal() {
-    setState(() {
-      _showLocationModal = false;
-    });
-  }
-
-  Future<void> _requestLocationPermission() async {
-    final status = await Permission.location.request();
-
-    if (status.isGranted) {
-      print("Permission de localisation accordée");
-      _closeLocationModal();
-    } else if (status.isDenied) {
-      print("Permission de localisation refusée");
-      _closeLocationModal();
-      // Ne pas réafficher l'alerte
-    } else if (status.isPermanentlyDenied) {
-      print("Permission de localisation refusée définitivement");
-      _closeLocationModal();
-      // Optionnel: montrer une dialog pour rediriger vers les paramètres
-    }
-  }
-
-  void _nextStep() {
-    if (_currentStep < _features.length - 1) {
-      setState(() {
-        _currentStep++;
-      });
+  void _nextPage() {
+    HapticFeedback.lightImpact();
+    if (_currentPage == _totalPages - 1) {
+      Navigator.pushReplacementNamed(context, '/login');
     } else {
-      _goToLoginPage(); // Changé pour aller à la page de connexion
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOutCubic,
+      );
     }
   }
 
-  void _previousStep() {
-    if (_currentStep > 0) {
-      setState(() {
-        _currentStep--;
-      });
-    }
+  void _previousPage() {
+    HapticFeedback.lightImpact();
+    _pageController.previousPage(
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOutCubic,
+    );
   }
 
-  void _goToNextPage() {
-    Navigator.pushNamed(context, '/onboarding-alert');
-  }
+  /// Demande l'autorisation de localisation une seule fois (au premier lancement après installation).
+  Future<void> _showLocationPermissionDialogIfFirstTime() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool(_kLocationPermissionAskedKey) == true) return;
+    if (!mounted) return;
 
-  // Nouvelle méthode pour aller à la page de connexion
-  void _goToLoginPage() {
-    Navigator.pushNamed(context, '/login'); // Assurez-vous que cette route existe dans votre MaterialApp
-  }
-
-  void _selectStep(int index) {
-    setState(() {
-      _currentStep = index;
-    });
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1A1A1A),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: _primaryColor.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.location_on_rounded,
+                  color: _primaryColor,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Accès à la localisation',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          content: const Text(
+            'Treg-Eslama a besoin de votre position pour vous alerter en temps réel sur les dangers (accidents, inondations, travaux) et vous proposer des itinéraires plus sûrs.\n\nVos données restent anonymisées et ne sont utilisées que pour votre sécurité.',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 15,
+              height: 1.5,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                final p = await SharedPreferences.getInstance();
+                await p.setBool(_kLocationPermissionAskedKey, true);
+              },
+              child: Text(
+                'Plus tard',
+                style: TextStyle(
+                  color: _textSecondary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            FilledButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await Permission.locationWhenInUse.request();
+                final p = await SharedPreferences.getInstance();
+                await p.setBool(_kLocationPermissionAskedKey, true);
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: _primaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Autoriser',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
+      backgroundColor: _bgColor,
+      body: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle.light,
+        child: SafeArea(
+          child: Stack(
         children: [
-          // Arrière-plan avec effet de particules
-          if (_showParticles)
-            Positioned.fill(child: CustomPaint(painter: _ParticlesPainter())),
-
-          // Contenu principal
-          Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: screenWidth * 0.08,
-              vertical: screenHeight * 0.05,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // En-tête avec logo
-                SafeArea(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'SmartRoad',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                      Text(
-                        '${_currentStep + 1}/${_features.length}',
-                        style: TextStyle(color: Colors.white54, fontSize: 14),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const Spacer(),
-
-                // Illustration animée
-                Center(
-                  child: AnimatedBuilder(
-                    animation: _controller,
-                    builder: (context, child) {
-                      return Transform.translate(
-                        offset: Offset(0, _slideAnimation.value),
-                        child: Transform.scale(
-                          scale: _scaleAnimation.value,
-                          child: Opacity(
-                            opacity: _fadeAnimation.value,
-                            child: _buildAnimatedIllustration(),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-
-                const Spacer(),
-
-                // Titre
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 500),
-                  child: Text(
-                    _features[_currentStep]['title'],
-                    key: ValueKey<int>(_currentStep),
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: screenWidth * 0.07,
-                      fontWeight: FontWeight.bold,
-                      height: 1.2,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Description
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 500),
-                  transitionBuilder: (child, animation) {
-                    return FadeTransition(
-                      opacity: animation,
-                      child: SlideTransition(
-                        position: Tween<Offset>(
-                          begin: const Offset(0, 0.2),
-                          end: Offset.zero,
-                        ).animate(animation),
-                        child: child,
-                      ),
-                    );
-                  },
-                  child: Text(
-                    _features[_currentStep]['description'],
-                    key: ValueKey<int>(_currentStep),
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: screenWidth * 0.04,
-                      height: 1.5,
-                    ),
-                  ),
-                ),
-
-                const Spacer(),
-
-                // Boutons de navigation - ICÔNES SUR LES CÔTES
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Bouton précédent (icône ←) à GAUCHE
-                      if (_currentStep > 0)
-                        IconButton(
-                          onPressed: _previousStep,
-                          icon: const Icon(
-                            Icons.arrow_back,
-                            color: Colors.white70,
-                            size: 32,
-                          ),
-                          padding: const EdgeInsets.all(16),
-                          splashRadius: 24,
-                        )
-                      else
-                        const SizedBox(width: 56), // Espace vide pour l'alignement
-
-                      // Bouton suivant (icône →) ou Connecter (🔐) à DROITE
-                      IconButton(
-                        onPressed: _nextStep,
-                        icon: _currentStep == _features.length - 1
-                            ? const Icon(
-                                Icons.login,
-                                color: Colors.white,
-                                size: 32,
-                              ) // Icône pour "Connecter"
-                            : const Icon(
-                                Icons.arrow_forward,
-                                color: Colors.white,
-                                size: 32,
-                              ), // Icône pour "Suivant"
-                        padding: const EdgeInsets.all(16),
-                        splashRadius: 24,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Modal pour permission de localisation de l'application
-          if (_showLocationModal) _buildLocationPermissionModal(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLocationPermissionModal() {
-    return WillPopScope(
-      onWillPop: () async => false,
-      child: GestureDetector(
-        onTap: () {},
-        child: Container(
-          color: Colors.black.withOpacity(0.8),
-          child: Center(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeOutCubic,
-                  padding: const EdgeInsets.all(24),
+              // Fond avec léger dégradé
+          Positioned.fill(
+                child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.grey[900],
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.blueAccent.withOpacity(0.3)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.5),
-                        blurRadius: 30,
-                        spreadRadius: 5,
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Icône de localisation
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.blueAccent.withOpacity(0.2),
-                          border: Border.all(
-                            color: Colors.blueAccent.withOpacity(0.5),
-                            width: 2,
-                          ),
-                        ),
-                        child: const Icon(
-                          Icons.location_on_outlined,
-                          size: 50,
-                          color: Colors.blueAccent,
-                        ),
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // Titre
-                      const Text(
-                        'Autoriser l\'accès à la localisation',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Description
-                      const Text(
-                        'SmartRoad a besoin d\'accéder à votre position pour analyser les routes autour de vous et vous fournir des alertes pertinentes.',
-                        style: TextStyle(color: Colors.white70, fontSize: 16),
-                        textAlign: TextAlign.center,
-                      ),
-
-                      const SizedBox(height: 30),
-
-                      // Bouton unique "Autoriser"
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: _requestLocationPermission,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blueAccent,
-                            padding: const EdgeInsets.symmetric(vertical: 18),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 4,
-                          ),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.check, color: Colors.white),
-                              SizedBox(width: 12),
-                              Text(
-                                'Autoriser',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 15),
-
-                      // Note
-                      Text(
-                        'Cette alerte ne réapparaîtra plus une fois autorisée',
-                        style: TextStyle(color: Colors.white54, fontSize: 12),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+                    gradient: RadialGradient(
+                      center: Alignment.topCenter,
+                      radius: 1.5,
+                      colors: [_bgColor.withOpacity(0.9), _bgColor],
+                      stops: const [0.0, 0.8],
+                    ),
                   ),
                 ),
               ),
-            ),
+
+              // Pages
+              PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: (index) {
+                  setState(() => _currentPage = index);
+                  if (index > 0) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      _showLocationPermissionDialogIfFirstTime();
+                    });
+                  }
+                    },
+                    itemCount: _totalPages,
+                itemBuilder: (context, index) => _buildPage(index),
+              ),
+
+              // Header : indicateurs + bouton retour/skip
+          Positioned(
+                top: 20,
+                left: 24,
+                right: 24,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    if (_currentPage > 0)
+                      GestureDetector(
+                        onTap: _previousPage,
+                        child: Icon(Icons.arrow_back_ios_new_rounded,
+                            color: Colors.white, size: 20),
+                      )
+                    else
+                      const SizedBox(width: 20),
+                    Row(
+                      children: List.generate(_totalPages, (i) {
+                        return AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          width: i == _currentPage ? 22 : 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(4),
+                            color: i == _currentPage
+                                ? _getPageColor(i)
+                                : _textSecondary.withOpacity(0.3),
+                          ),
+                        );
+                      }),
+                    ),
+                    if (_currentPage < _totalPages - 1)
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.pushReplacementNamed(context, '/login');
+                        },
+                        child: const Text(
+                          "Passer",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      )
+                    else
+                      const SizedBox(width: 20),
+                  ],
+                ),
+              ),
+
+              // Bouton principal
+              Positioned(
+                bottom: 100,
+                left: 40,
+                right: 40,
+                child: ElevatedButton(
+                  onPressed: _nextPage,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _primaryColor,
+                    minimumSize: const Size(double.infinity, 60),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30)),
+                    elevation: 2,
+                  ),
+                  child: Text(
+                    _currentPage == _totalPages - 1
+                        ? "Commencer"
+                        : "Continuer",
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      fontFamily: 'Roboto',
+                    ),
+                  ),
+                ),
+              ),
+
+              // Choix langue
+              Positioned(
+                bottom: 40,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: TextButton(
+                    onPressed: () {},
+                    child: const Text(
+                      "Choisir la langue",
+                      style: TextStyle(
+                        color: _primaryColor,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        fontFamily: 'Roboto',
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildAnimatedIllustration() {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        // Cercle de fond animé
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 800),
-          width: 200,
-          height: 200,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: RadialGradient(
-              colors: [
-                _features[_currentStep]['color'].withOpacity(0.2),
-                Colors.transparent,
-              ],
-              stops: const [0.1, 0.8],
-            ),
-          ),
-        ),
+  // Construction d'une page : logo, titre, phrase (même style qu'avant)
+  Widget _buildPage(int index) {
+    final page = _getPageData(index);
+    const double logoSize = 150;
+    const double iconSize = 100;
 
-        // Icône principale avec animation
-        RotationTransition(
-          turns: Tween(
-            begin: 0.0,
-            end: 1.0,
-          ).animate(CurvedAnimation(parent: _controller, curve: Curves.linear)),
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.black.withOpacity(0.5),
-              border: Border.all(
-                color: _features[_currentStep]['color'].withOpacity(0.3),
-                width: 2,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Center(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (index == 0)
+              Image.asset(
+                "assets/images/logo_treg_eslama.png",
+                height: logoSize,
+                width: logoSize,
+                fit: BoxFit.contain,
+              )
+            else
+              Icon(
+                page.icon,
+                size: iconSize,
+                color: _getPageColor(index),
+              ),
+            const SizedBox(width: 20),
+            Flexible(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    page.title,
+                    style: const TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      height: 1.2,
+                      fontFamily: 'Roboto',
+                    ),
+                  ),
+                        const SizedBox(height: 10),
+                        Text(
+                    page.subtitle,
+                    style: const TextStyle(
+                            fontSize: 16,
+                      color: Colors.white70,
+                      height: 1.4,
+                      fontFamily: 'Roboto',
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: Icon(
-              _features[_currentStep]['icon'],
-              size: 80,
-              color: _features[_currentStep]['color'],
-            ),
-          ),
+          ],
         ),
-      ],
+      ),
     );
   }
-}
 
-class _ParticlesPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withOpacity(0.03)
-      ..style = PaintingStyle.fill;
-
-    for (int i = 0; i < 50; i++) {
-      final x = (i * 37) % size.width;
-      final y = (i * 29) % size.height;
-      final radius = 1 + (i % 3).toDouble();
-
-      canvas.drawCircle(Offset(x, y), radius, paint);
+  // Couleur des pages
+  Color _getPageColor(int index) {
+    switch (index) {
+      case 0:
+        return _primaryColor;
+      case 1:
+        return _accentColor;
+      case 2:
+        return _primaryColor;
+      case 3:
+        return _secondaryColor;
+      default:
+        return _primaryColor;
     }
   }
 
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  // Données des pages
+  _PageData _getPageData(int index) {
+    switch (index) {
+      case 0:
+        return _PageData(
+          title: 'Treg-Eslama',
+          subtitle:
+              'Votre sécurité sur la route, en temps réel.\nUne application conçue pour protéger vos trajets.',
+        );
+      case 1:
+        return _PageData(
+          title: 'Routes dangereuses',
+          subtitle:
+              'Accidents, routes coupées, inondations.\nSoyez informé avant qu’il ne soit trop tard.',
+          icon: Icons.warning_amber_rounded,
+        );
+      case 2:
+        return _PageData(
+          title: 'Carte intelligente',
+          subtitle:
+              'Alertes en temps réel, trafic & météo.\nItinéraires plus sûrs grâce à l’IA.',
+          icon: Icons.map_outlined,
+        );
+      case 3:
+        return _PageData(
+          title: 'Vie privée protégée',
+          subtitle:
+              'Données anonymisées.\nLocalisation uniquement avec votre accord.',
+          icon: Icons.lock_outline,
+        );
+      default:
+        return _PageData(title: '', subtitle: '');
+    }
+  }
+}
+
+class _PageData {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+
+  _PageData({
+    required this.title,
+    required this.subtitle,
+    this.icon = Icons.safety_check,
+  });
 }
