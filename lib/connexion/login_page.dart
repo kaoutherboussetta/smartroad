@@ -104,12 +104,12 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
               content: Text('Erreur: $e'),
               backgroundColor: Colors.redAccent,
-            ),
-          );
+          ),
+        );
         }
       } finally {
         if (mounted) setState(() => _isLoading = false);
@@ -135,12 +135,12 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
-        children: [
+            children: [
           // ── Fond vidéo EN COULEUR (sans filtre) ──
           _buildBackground(),
 
           // ── Overlay noir léger pour lisibilité ──
-          Container(color: Colors.black.withOpacity(0.35)),
+          Container(color: Colors.black.withValues(alpha:0.35)),
 
           // ── Bouton retour ──
           SafeArea(
@@ -212,10 +212,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             child: Container(
               padding: const EdgeInsets.fromLTRB(24, 70, 24, 36),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.25),
+                color: Colors.black.withValues(alpha:0.25),
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.white.withValues(alpha:0.15),
                   width: 1,
                 ),
               ),
@@ -272,10 +272,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                     _buildSignUpLink(),
                   ],
                 ),
-              ),
-            ),
-          ),
-        ),
+                                ),
+                              ),
+                      ),
+                    ),
 
         // ── Logo flottant en haut ──
         Positioned(
@@ -323,7 +323,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(
-          color: Colors.white.withOpacity(0.45),
+          color: Colors.white.withValues(alpha:0.45),
           fontSize: 15,
         ),
         suffixIcon: suffixWidget ??
@@ -333,7 +333,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             ),
         suffixIconConstraints: const BoxConstraints(minWidth: 44, minHeight: 44),
         filled: true,
-        fillColor: Colors.black.withOpacity(0.18),
+        fillColor: Colors.black.withValues(alpha:0.18),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
           borderSide: BorderSide.none,
@@ -341,14 +341,14 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
           borderSide: BorderSide(
-            color: Colors.white.withOpacity(0.20),
+            color: Colors.white.withValues(alpha:0.20),
             width: 1,
           ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
           borderSide: const BorderSide(
-            color: Colors.white,
+                            color: Colors.white,
             width: 1.2,
           ),
         ),
@@ -388,11 +388,11 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                 }),
                 checkColor: Colors.black,
                 side: const BorderSide(color: Colors.white60, width: 1.5),
-                shape: RoundedRectangleBorder(
+                            shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-            ),
+                            ),
+                          ),
+                        ),
             const SizedBox(width: 8),
             const Text(
               "Se souvenir de moi",
@@ -404,15 +404,15 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         // Mot de passe oublié
         GestureDetector(
           onTap: () => Navigator.push(
-            context,
+                              context,
             MaterialPageRoute(builder: (_) => const ForgotPasswordPage()),
-          ),
-          child: const Text(
+                              ),
+                          child: const Text(
             "Mot de passe oublié ?",
             style: TextStyle(color: Colors.white70, fontSize: 13),
-          ),
-        ),
-      ],
+                          ),
+                        ),
+                      ],
     );
   }
 

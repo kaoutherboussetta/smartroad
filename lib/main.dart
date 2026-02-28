@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'screens/OnboardingAnalysisPage.dart';
+import 'screens/onboarding_analysis_page.dart';
 import 'connexion/login_page.dart';
 import 'connexion/register_page.dart';
 import 'connexion/forgot_password_page.dart';
@@ -14,7 +14,9 @@ import 'widgets/video_background.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   // Précharge la vidéo d’arrière-plan pour qu’elle s’affiche dès l’ouverture de la connexion (sans fond noir)
-  VideoBackground.preload();
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    VideoBackground.preload();
+  });
   runApp(const MyApp());
 }
 

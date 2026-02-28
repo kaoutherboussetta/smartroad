@@ -1,7 +1,5 @@
 import 'package:mongo_dart/mongo_dart.dart';
 
-/// Modèle des données de connexion d'un citoyen (collection MongoDB "connexions").
-/// Utilisé pour stocker email, mot de passe hashé, nom, prénom, etc.
 class CitoyenConnexion {
   ObjectId? id;
   String email;
@@ -30,44 +28,33 @@ class CitoyenConnexion {
   });
 
   Map<String, dynamic> toMap() {
-    final map = <String, dynamic>{
+    return {
+      '_id': id,
       'email': email,
       'passwordHash': passwordHash,
       'firstName': firstName,
       'lastName': lastName,
       'createdAt': createdAt.toUtc().toIso8601String(),
+      'updatedAt': (updatedAt ?? createdAt).toUtc().toIso8601String(),
       'isActive': isActive,
       'rememberMe': rememberMe,
       'acceptTerms': acceptTerms,
+      if (phoneNumber != null) 'phoneNumber': phoneNumber,
     };
-    if (id != null) map['_id'] = id;
-    if (updatedAt != null) map['updatedAt'] = updatedAt!.toUtc().toIso8601String();
-    if (phoneNumber != null) map['phoneNumber'] = phoneNumber;
-    return map;
   }
 
   factory CitoyenConnexion.fromMap(Map<String, dynamic> map) {
-    ObjectId? docId;
-    if (map['_id'] != null) {
-      docId = map['_id'] is ObjectId
-          ? map['_id'] as ObjectId
-          : ObjectId.fromHexString(map['_id'].toString());
-    }
     return CitoyenConnexion(
-      id: docId,
-      email: map['email']?.toString() ?? '',
-      passwordHash: map['passwordHash']?.toString() ?? '',
-      firstName: map['firstName']?.toString() ?? '',
-      lastName: map['lastName']?.toString() ?? '',
-      createdAt: map['createdAt'] != null
-          ? DateTime.parse(map['createdAt'].toString()).toLocal()
-          : DateTime.now(),
-      updatedAt: map['updatedAt'] != null
-          ? DateTime.parse(map['updatedAt'].toString()).toLocal()
-          : null,
-      isActive: map['isActive'] == true,
-      rememberMe: map['rememberMe'] == true,
-      acceptTerms: map['acceptTerms'] == true,
+      id: map['_id'] is ObjectId ? map['_id'] : null,
+      email: map['email'] ?? '',
+      passwordHash: map['passwordHash'] ?? '',
+      firstName: map['firstName'] ?? '',
+      lastName: map['lastName'] ?? '',
+      createdAt: DateTime.parse(map['createdAt'] ?? DateTime.now().toIso8601String()),
+      updatedAt: map['updatedAt'] != null ? DateTime.parse(map['updatedAt']) : null,
+      isActive: map['isActive'] ?? true,
+      rememberMe: map['rememberMe'] ?? false,
+      acceptTerms: map['acceptTerms'] ?? false,
       phoneNumber: map['phoneNumber']?.toString(),
     );
   }

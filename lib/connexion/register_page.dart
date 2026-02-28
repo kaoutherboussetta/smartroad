@@ -1,9 +1,10 @@
+import 'dart:async';
 import 'dart:ui';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 import '../../providers/auth_provider.dart';
-import '../../config/atlas_config.dart';
 import '../../services/connexion_service.dart';
 import 'login_page.dart';
 
@@ -39,6 +40,7 @@ class _RegisterPageState extends State<RegisterPage>
   bool _acceptTerms = false;
   bool _isValidatingEmail = false;
   String? _emailError;
+  Timer? _emailValidationTimer;
 
   final ConnexionService _authService = ConnexionService();
 
@@ -73,6 +75,7 @@ class _RegisterPageState extends State<RegisterPage>
 
   @override
   void dispose() {
+    _emailValidationTimer?.cancel();
     _videoController.dispose();
     _fadeController.dispose();
     _firstNameController.dispose();
@@ -88,12 +91,15 @@ class _RegisterPageState extends State<RegisterPage>
     super.dispose();
   }
 
+  void _scheduleEmailValidation() {
+    _emailValidationTimer?.cancel();
+    _emailValidationTimer = Timer(const Duration(milliseconds: 800), () {
+      if (mounted) _validateEmailField();
+    });
+  }
+
   Future<void> _validateEmailField() async {
     if (_emailController.text.isEmpty) {
-      setState(() => _emailError = null);
-      return;
-    }
-    if (!isAtlasDataApiConfigured) {
       setState(() => _emailError = null);
       return;
     }
@@ -112,7 +118,9 @@ class _RegisterPageState extends State<RegisterPage>
       if (mounted) {
         setState(() => _emailError = null);
       }
-      debugPrint('Vérification email: $e');
+      if (kDebugMode) {
+        debugPrint('Vérification email: indisponible (réseau ou backend)');
+      }
     } finally {
       if (mounted) setState(() => _isValidatingEmail = false);
     }
@@ -133,18 +141,6 @@ class _RegisterPageState extends State<RegisterPage>
         const SnackBar(
           content: Text('Veuillez accepter les conditions d\'utilisation'),
           backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-    if (!isAtlasDataApiConfigured) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Inscription temporairement indisponible. Configurez Atlas Data API dans lib/config/atlas_config.dart (App ID et clé API).',
-          ),
-          backgroundColor: Colors.orange,
-          duration: Duration(seconds: 5),
         ),
       );
       return;
@@ -177,17 +173,11 @@ class _RegisterPageState extends State<RegisterPage>
       }
     } catch (e) {
       if (mounted) {
-        final msg = e.toString();
-        final isConfigError = msg.contains('non configurée') ||
-            msg.contains('atlas_config') ||
-            msg.contains('Atlas Data API');
+        final msg = e is Exception ? e.toString().replaceFirst('Exception: ', '') : e.toString();
+        final displayMsg = msg.length <= 120 ? msg : '${msg.substring(0, 120)}...';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              isConfigError
-                  ? 'Configurez l\'API Atlas : lib/config/atlas_config.dart (atlasDataApiAppId et atlasDataApiKey).'
-                  : (msg.length > 80 ? '${msg.substring(0, 80)}...' : msg),
-            ),
+            content: Text(displayMsg),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 5),
           ),
@@ -205,7 +195,7 @@ class _RegisterPageState extends State<RegisterPage>
       body: Stack(
         children: [
           _buildBackground(),
-          Container(color: Colors.black.withOpacity(0.35)),
+          Container(color: Colors.black.withValues(alpha:0.35)),
           SafeArea(
             child: Align(
               alignment: Alignment.topLeft,
@@ -265,10 +255,10 @@ class _RegisterPageState extends State<RegisterPage>
             child: Container(
               padding: const EdgeInsets.fromLTRB(24, 70, 24, 36),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.25),
+                color: Colors.black.withValues(alpha:0.25),
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.white.withValues(alpha:0.15),
                   width: 1,
                 ),
               ),
@@ -281,7 +271,7 @@ class _RegisterPageState extends State<RegisterPage>
                     Text(
                       'Créer un compte',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.95),
+                        color: Colors.white.withValues(alpha:0.95),
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
                       ),
@@ -291,7 +281,7 @@ class _RegisterPageState extends State<RegisterPage>
                     Text(
                       'Rejoignez SmartRoad',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
+                        color: Colors.white.withValues(alpha:0.6),
                         fontSize: 13,
                       ),
                       textAlign: TextAlign.center,
@@ -564,18 +554,12 @@ class _RegisterPageState extends State<RegisterPage>
       keyboardType: keyboardType,
       style: const TextStyle(color: Colors.white, fontSize: 15),
       onChanged: keyboardType == TextInputType.emailAddress
-          ? (value) {
-              Future.delayed(const Duration(milliseconds: 500), () {
-                if (mounted && value == _emailController.text && value.isNotEmpty) {
-                  _validateEmailField();
-                }
-              });
-            }
+          ? (_) => _scheduleEmailValidation()
           : null,
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(
-          color: Colors.white.withOpacity(0.45),
+          color: Colors.white.withValues(alpha:0.45),
           fontSize: 15,
         ),
         suffixIcon: suffixWidget ??
@@ -585,7 +569,7 @@ class _RegisterPageState extends State<RegisterPage>
             ),
         suffixIconConstraints: const BoxConstraints(minWidth: 44, minHeight: 44),
         filled: true,
-        fillColor: Colors.black.withOpacity(0.18),
+        fillColor: Colors.black.withValues(alpha:0.18),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
           borderSide: BorderSide.none,
@@ -593,7 +577,7 @@ class _RegisterPageState extends State<RegisterPage>
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
           borderSide: BorderSide(
-            color: Colors.white.withOpacity(0.20),
+            color: Colors.white.withValues(alpha:0.20),
             width: 1,
           ),
         ),

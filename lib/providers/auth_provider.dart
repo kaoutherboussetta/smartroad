@@ -14,11 +14,13 @@ class AuthProvider with ChangeNotifier {
 
   final ConnexionService _authService = ConnexionService();
 
+  // 🔹 Connexion
   Future<bool> login(String email, String password, bool rememberMe) async {
     try {
       _isLoading = true;
       notifyListeners();
 
+      // ⚡ Maintenant login() retourne directement un User
       final user = await _authService.login(
         email: email,
         password: password,
@@ -40,6 +42,7 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  // 🔹 Inscription
   Future<bool> register({
     required String firstName,
     required String lastName,
@@ -68,6 +71,7 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  // 🔹 Déconnexion
   Future<void> logout() async {
     _currentUser = null;
     _isAuthenticated = false;
@@ -75,6 +79,7 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  // 🔹 Vérifier si l'email existe
   Future<bool> checkEmailExists(String email) async {
     try {
       return await _authService.emailExists(email);
@@ -83,12 +88,14 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  // 🔹 Définir manuellement un utilisateur
   void setUser(User user) {
     _currentUser = user;
     _isAuthenticated = true;
     notifyListeners();
   }
 
+  // 🔹 Effacer l'utilisateur
   void clearUser() {
     _currentUser = null;
     _isAuthenticated = false;

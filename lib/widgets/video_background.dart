@@ -116,7 +116,7 @@ class _VideoBackgroundState extends State<VideoBackground> {
           ),
         // Overlay léger pour garder le contenu lisible
         if (_initialized)
-          Container(color: Colors.black.withOpacity(widget.opacity)),
+          Container(color: Colors.black.withValues(alpha: widget.opacity)),
         widget.child,
       ],
     );

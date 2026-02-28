@@ -313,7 +313,7 @@ class DashboardPage extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white10,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha:0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -352,9 +352,9 @@ class DashboardPage extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha:0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha:0.3)),
         ),
         child: Row(
           children: [
@@ -492,7 +492,7 @@ class TripsPage extends StatelessWidget {
               ElevatedButton(
                 onPressed: () {},
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueAccent.withOpacity(0.2),
+                  backgroundColor: Colors.blueAccent.withValues(alpha:0.2),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 ),
                 child: const Text(
@@ -535,7 +535,7 @@ class ProfilePage extends StatelessWidget {
                     height: 100,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.blueAccent.withOpacity(0.2),
+                      color: Colors.blueAccent.withValues(alpha:0.2),
                       border: Border.all(color: Colors.blueAccent, width: 2),
                     ),
                     child: user?.profileImage != null

@@ -23,8 +23,8 @@ dependencies:
   # Base de données et utilitaires
   path: ^1.8.3
   crypto: ^3.0.3
-  bcrypt: ^1.2.0   # Mot de passe (aligné Atlas users)
-  mongo_dart: ^0.10.3   # MongoDB Atlas
+  bcrypt: ^1.2.0          # Pour le hash des mots de passe
+  mongo_dart: ^0.10.3      # Connexion à MongoDB Atlas
 
   # State management
   provider: ^6.1.2
@@ -32,16 +32,17 @@ dependencies:
   # Local storage
   shared_preferences: ^2.2.2
 
-  # Localisation
+  # Localisation et géolocalisation
   geolocator: ^10.0.0
-  location: ^5.0.0
+  # location retiré (non utilisé) — évite MissingPluginException flutter_background_fetch
 
   # Google Maps
   google_maps_flutter: ^2.5.0
 
   # API calls
-  http: ^1.1.0
   dio: ^5.3.0
+  http: ^1.1.0
+  cloudinary_public: ^0.21.0
 
   # Animation et UI
   lottie: ^3.0.1

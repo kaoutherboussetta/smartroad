@@ -19,12 +19,12 @@ class AuthTheme {
 
   /// Carte de formulaire type glassmorphism (fond semi-transparent, bordure discrète).
   static BoxDecoration get formCardDecoration => BoxDecoration(
-        color: Colors.white.withOpacity(0.06),
+        color: Colors.white.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(cardRadius),
-        border: Border.all(color: Colors.white.withOpacity(0.08), width: 1),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08), width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),
@@ -58,11 +58,11 @@ class AuthTheme {
       labelText: labelText,
       hintText: hintText,
       labelStyle: const TextStyle(color: textSecondary),
-      hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+      hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
       prefixIcon: Icon(prefixIcon, color: primary, size: 22),
       suffixIcon: suffixIcon,
       filled: true,
-      fillColor: Colors.white.withOpacity(0.06),
+      fillColor: Colors.white.withValues(alpha: 0.06),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(inputRadius),
         borderSide: BorderSide.none,
